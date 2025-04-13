@@ -106,9 +106,6 @@ app.post('/clipboard', express.urlencoded({ extended: true }), (req, res) => {
     const clip = req.body.clip;
     if (clip) {
         console.log(`📥 Received clipboard from text field:\n${clip}`);
-        if (!clipboardHistory.includes(clip)) {
-            clipboardHistory.push(clip);
-        }
     }
     res.redirect('/clipboard');
 });
@@ -122,36 +119,177 @@ app.get('/upload', (req, res) => {
             <title>📤 Upload to Mac</title>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body { font-family: sans-serif; background: #f2f2f2; padding: 20px; text-align: center; }
-                h1 { color: #333; }
-                form { background: white; padding: 20px; border-radius: 10px; display: inline-block; margin-top: 30px; }
-                input[type="file"] { margin: 10px 0; }
-                button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; }
+                * {
+                    box-sizing: border-box;
+                }
+
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    background: linear-gradient(to right, #f8f9fa, #e9ecef);
+                    margin: 0;
+                    padding: 20px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                }
+
+                .container {
+                    background: white;
+                    padding: 30px 25px;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+                    text-align: center;
+                    width: 100%;
+                    max-width: 400px;
+                }
+
+                h1 {
+                    font-size: 1.8rem;
+                    margin-bottom: 1rem;
+                    color: #333;
+                }
+
+                input[type="file"] {
+                    display: block;
+                    margin: 20px auto;
+                    width: 100%;
+                    font-size: 1rem;
+                    padding: 10px;
+                    border: 2px dashed #ccc;
+                    border-radius: 8px;
+                    background-color: #fafafa;
+                    cursor: pointer;
+                    transition: border-color 0.3s;
+                }
+
+                input[type="file"]:hover {
+                    border-color: #007bff;
+                }
+
+                button {
+                    margin-top: 15px;
+                    padding: 12px 20px;
+                    font-size: 1rem;
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: background-color 0.3s ease;
+                    width: 100%;
+                }
+
+                button:hover {
+                    background-color: #0056b3;
+                }
+
+                @media (max-width: 480px) {
+                    h1 {
+                        font-size: 1.5rem;
+                    }
+
+                    .container {
+                        padding: 20px;
+                    }
+                }
             </style>
         </head>
         <body>
-            <h1>📤 Upload File to Mac</h1>
-            <form action="/upload" method="POST" enctype="multipart/form-data">
-                <input type="file" name="file" required /><br />
-                <button type="submit">Upload</button>
-            </form>
+            <div class="container">
+                <h1>📤 Upload File to Mac</h1>
+                <form action="/upload" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file" multiple required />
+                    <button type="submit">Upload</button>
+                </form>
+            </div>
         </body>
         </html>
     `);
 });
 
+
 // Upload handler
-app.post('/upload', upload.single('file'), (req, res) => {
+app.post('/upload', upload.array('file', 12), (req, res) => {
+    const files = req.files.map((file) => file.originalname);
     res.send(`
         <html>
-        <body style="font-family:sans-serif;text-align:center;padding:50px;">
-            <h2>✅ File Uploaded!</h2>
-            <p>Saved to Downloads: <strong>${req.file.originalname}</strong></p>
+        <head>
+            <style>
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    background: linear-gradient(to right, #f8f9fa, #e9ecef);
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                    color: #343a40;
+                    animation: fadeIn 0.6s ease-in-out;
+                }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+
+                h2 {
+                    font-size: 2rem;
+                    margin-bottom: 1rem;
+                }
+
+                p {
+                    font-size: 1.1rem;
+                    max-width: 80%;
+                }
+
+                strong {
+                    color: #007bff;
+                }
+
+                a {
+                    margin-top: 2rem;
+                    display: inline-block;
+                    background-color: #007bff;
+                    color: white;
+                    padding: 0.6rem 1.2rem;
+                    border-radius: 8px;
+                    text-decoration: none;
+                    transition: background-color 0.3s ease;
+                }
+
+                a:hover {
+                    background-color: #0056b3;
+                }
+
+                .file-list {
+                    margin-top: 1rem;
+                    background: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                }
+
+                .file-list span {
+                    display: block;
+                    margin: 0.2rem 0;
+                    font-weight: 500;
+                }
+            </style>
+        </head>
+        <body>
+            <h2>✅ Files Uploaded Successfully!</h2>
+            <div class="file-list">
+                <p>Saved to Downloads:</p>
+                ${files.map(file => `<span>📁 ${file}</span>`).join('')}
+            </div>
             <a href="/upload">🔙 Upload More</a>
         </body>
         </html>
     `);
 });
+
 
 
 
