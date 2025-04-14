@@ -307,43 +307,66 @@ app.use(
 );
 
 
+// Get selected feature from command line (default: 'all')
+const selectedFeature = process.argv[2] || 'all';
+
 
 // Start the server
 app.listen(PORT, () => {
     try {
         const ip = execSync('ipconfig getifaddr en0').toString().trim();
         const url = `http://${ip}:${PORT}`;
+        const feature = process.argv[2] || 'all';
 
-        const separator = '═'.repeat(50);
+        const separator = '═'.repeat(60);
         const centerText = (text) => {
-            const width = 50;
+            const width = 60;
             const padding = Math.max(0, Math.floor((width - text.length) / 2));
             return ' '.repeat(padding) + text;
         };
 
+        console.clear(); // modern clean feel
         console.log(`\n${separator}`);
-        console.log(centerText('📡 Local Sharing Server'));
+        console.log(centerText('🚀 Local File Sharing Server'));
         console.log(separator);
 
-        console.log(`\n📂  File Browser     : ${url}`);
-        console.log(`📤  Upload File      : ${url}/upload`);
-        console.log(`📋  Clipboard Sync   : ${url}/clipboard\n`);
+        console.log(`\n🌐 IP Address: ${ip}`);
+        console.log(`🔌 Port      : ${PORT}`);
+        console.log(`📦 Feature   : ${feature}\n`);
 
-        console.log(centerText('📱  Scan with Your Phone'));
-        console.log('   (make sure it’s on the same Wi-Fi)\n');
+        if (feature === 'browser' || feature === 'all') {
+            console.log(`📂 File Browser   → ${url}`);
+        }
 
-        console.log('🔗 File Browser');
-        qrcode.generate(url, { small: true });
+        if (feature === 'upload' || feature === 'all') {
+            console.log(`📤 Upload File    → ${url}/upload`);
+        }
 
-        console.log('\n🔗 File Upload');
-        qrcode.generate(`${url}/upload`, { small: true });
+        if (feature === 'clipboard' || feature === 'all') {
+            console.log(`📋 Clipboard Sync → ${url}/clipboard`);
+        }
 
-        console.log('\n🔗 Clipboard');
-        qrcode.generate(`${url}/clipboard`, { small: true });
+        console.log(`\n📱 Scan these QR codes on your phone (same Wi-Fi):\n`);
+
+        if (feature === 'browser' || feature === 'all') {
+            console.log('🔗 File Browser');
+            qrcode.generate(url, { small: true });
+        }
+
+        if (feature === 'upload' || feature === 'all') {
+            console.log('\n🔗 File Upload');
+            qrcode.generate(`${url}/upload`, { small: true });
+        }
+
+        if (feature === 'clipboard' || feature === 'all') {
+            console.log('\n🔗 Clipboard');
+            qrcode.generate(`${url}/clipboard`, { small: true });
+        }
 
         console.log(`\n${separator}\n`);
     } catch (error) {
         console.error('❌ Could not get IP address:', error);
     }
 });
+
 
