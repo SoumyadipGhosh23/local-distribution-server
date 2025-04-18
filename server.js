@@ -6,6 +6,8 @@ const { execSync } = require('child_process');
 const qrcode = require('qrcode-terminal');
 const multer = require('multer');
 const fs = require('fs');
+const QRCode = require('qrcode');
+
 
 const app = express();
 const PORT = 8000;
@@ -306,14 +308,54 @@ app.use(
     })
 );
 
+app.use('/static', express.static(path.join(__dirname, 'QRCodes')));
+app.use('/static', express.static(path.join(__dirname, 'SystemRoutes')));
 
-// Get selected feature from command line (default: 'all')
-const selectedFeature = process.argv[2] || 'all';
+
+
+
+
+app.get('/qr/all', (req, res) => {
+    res.sendFile(path.join(`${__dirname}/QRCodes`, 'dashboard.html'));
+});
+
+app.get('/qr/file-browse', (req, res) => {
+    res.sendFile(path.join(`${__dirname}/QRCodes`, 'file-browse.html'));
+});
+
+app.get('/qr/upload', (req, res) => {
+    res.sendFile(path.join(`${__dirname}/QRCodes`, 'upload.html'));
+});
+
+app.get('/qr/clipboard', (req, res) => {
+    res.sendFile(path.join(`${__dirname}/QRCodes`, 'clipboard.html'));
+})
+
+
+//for qr code generation
+app.get('/qrcode', async (req, res) => {
+    const { url } = req.query;
+    const domain = req.rawHeaders[1];
+    if (!url) return res.status(400).send('Missing url param');
+
+    try {
+        const qr = await QRCode.toDataURL('http://' + domain + '/' + url);
+        const base64Data = qr.replace(/^data:image\/png;base64,/, "");
+        const imgBuffer = Buffer.from(base64Data, 'base64');
+
+        res.setHeader('Content-Type', 'image/png');
+        res.send(imgBuffer);
+    } catch (err) {
+        res.status(500).send('QR generation error');
+    }
+});
+
 
 
 // Start the server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     try {
+        const { default: open } = await import('open');
         const ip = execSync('ipconfig getifaddr en0').toString().trim();
         const url = `http://${ip}:${PORT}`;
         const feature = process.argv[2] || 'all';
@@ -334,39 +376,22 @@ app.listen(PORT, () => {
         console.log(`🔌 Port      : ${PORT}`);
         console.log(`📦 Feature   : ${feature}\n`);
 
-        if (feature === 'browser' || feature === 'all') {
-            console.log(`📂 File Browser   → ${url}`);
+
+        // Open dashboard in default browser
+        if (feature === 'all') {
+            await open(`${url}/qr/all`);
+        }
+        if(feature === 'browser') {
+            await open(`${url}/qr/file-browse`);
+        }
+        if(feature === 'upload') {
+            await open(`${url}/qr/upload`);
+        }
+        if(feature === 'clipboard') {
+            await open(`${url}/qr/clipboard`);
         }
 
-        if (feature === 'upload' || feature === 'all') {
-            console.log(`📤 Upload File    → ${url}/upload`);
-        }
-
-        if (feature === 'clipboard' || feature === 'all') {
-            console.log(`📋 Clipboard Sync → ${url}/clipboard`);
-        }
-
-        console.log(`\n📱 Scan these QR codes on your phone (same Wi-Fi):\n`);
-
-        if (feature === 'browser' || feature === 'all') {
-            console.log('🔗 File Browser');
-            qrcode.generate(url, { small: true });
-        }
-
-        if (feature === 'upload' || feature === 'all') {
-            console.log('\n🔗 File Upload');
-            qrcode.generate(`${url}/upload`, { small: true });
-        }
-
-        if (feature === 'clipboard' || feature === 'all') {
-            console.log('\n🔗 Clipboard');
-            qrcode.generate(`${url}/clipboard`, { small: true });
-        }
-
-        console.log(`\n${separator}\n`);
     } catch (error) {
-        console.error('❌ Could not get IP address:', error);
+        console.error('❌ Could not get IP address or open browser:', error);
     }
 });
-
-
