@@ -27,7 +27,7 @@ const upload = multer({ storage });
 
 // Serve file browser
 app.use(
-    "/",
+    "/file-browse",
     express.static(dropFolder),
     serveIndex(dropFolder, {
         icons: true,
@@ -210,10 +210,15 @@ app.get('/qr/clipboard', (req, res) => {
 app.get('/qrcode', async (req, res) => {
     const { url } = req.query;
     const domain = req.rawHeaders[1];
-    if (!url) return res.status(400).send('Missing url param');
+
+    if (!url) {
+        return res.status(400).send('URL parameter is required');
+    }
 
     try {
-        const qr = await QRCode.toDataURL('http://' + domain + '/' + url);
+        // Check if the URL is provided, and use a default if not
+        const qrUrl = `http://${domain}/${url}`; // Use the root if no URL is provided
+        const qr = await QRCode.toDataURL(qrUrl);
         const base64Data = qr.replace(/^data:image\/png;base64,/, "");
         const imgBuffer = Buffer.from(base64Data, 'base64');
 
@@ -226,13 +231,14 @@ app.get('/qrcode', async (req, res) => {
 
 
 
+
 // Start the server
 app.listen(PORT, async () => {
     try {
         const { default: open } = await import('open');
         const ip = execSync('ipconfig getifaddr en0').toString().trim();
         const url = `http://${ip}:${PORT}`;
-        const feature = process.argv[2] || 'upload';
+        const feature = process.argv[2] || 'browser';
 
         const separator = '═'.repeat(60);
         const centerText = (text) => {
@@ -241,6 +247,7 @@ app.listen(PORT, async () => {
             return ' '.repeat(padding) + text;
         };
 
+        console.log();
 
         console.log(centerText('🚀 Local File Sharing Server'));
 
