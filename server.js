@@ -123,9 +123,11 @@ app.get('/clipboard', async (req, res) => {
 // Handles user input from the manual clipboard textbox
 app.post('/clipboard', express.urlencoded({ extended: true }), (req, res) => {
     const clip = req.body.clip;
+    console.log(clip);
     if (clip) {
         latestClipFromPhone.push(clip)
     }
+    console.log(latestClipFromPhone);
     res.redirect('/clipboard');
 });
 
@@ -144,6 +146,7 @@ app.post('/upload', upload.array('file', 12), (req, res) => {
 
 
 
+//mac QR codes
 
 app.get('/qr/file-browse', (req, res) => {
     res.sendFile(path.join(`${__dirname}/QRCodes`, 'file-browse.html'));
@@ -154,7 +157,6 @@ app.get('/qr/upload', (req, res) => {
 });
 
 app.get('/qr/clipboard', (req, res) => {
-
 
     res.send(`
         <!DOCTYPE html>
@@ -178,7 +180,6 @@ app.get('/qr/clipboard', (req, res) => {
                     max-width: 600px;
                     margin-left: auto;
                     margin-right: auto;
-                    word-wrap: break-word;
                     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
                 }
             </style>
@@ -193,7 +194,10 @@ app.get('/qr/clipboard', (req, res) => {
 
             <h2>📥 Latest Clip Sent from Phone</h2>
             <h3>Refresh to get the latest clip</h3>
-            <div class="clip-box">${latestClipFromPhone.length > 0 ? latestClipFromPhone?.map((clip) => clip) : 'No clip received yet.'}</div>
+            <div class="clip-box">${latestClipFromPhone.length > 0
+            ? latestClipFromPhone.map((clip, index) => `${clip}${index === latestClipFromPhone.length - 1 ? '' : '<br/>'}`).join('')
+            : 'No clip received yet.'}
+            </div>
         </body>
         </html>
     `);
