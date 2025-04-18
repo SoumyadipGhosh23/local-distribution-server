@@ -13,7 +13,6 @@ inquirer
                 { name: '📂  File Browser', value: 'browser' },
                 { name: '📤  File Upload', value: 'upload' },
                 { name: '📋  Clipboard Sync', value: 'clipboard' },
-                { name: '🌐  Full Server (All options)', value: 'all' },
             ],
         },
     ])

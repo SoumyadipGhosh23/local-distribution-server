@@ -3,7 +3,6 @@ const serveIndex = require('serve-index');
 const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
-const qrcode = require('qrcode-terminal');
 const multer = require('multer');
 const fs = require('fs');
 const QRCode = require('qrcode');
@@ -12,9 +11,9 @@ const QRCode = require('qrcode');
 const app = express();
 const PORT = 8000;
 const dropFolder = path.join(os.homedir(), 'Downloads');
-console.log(`Drop folder: ${dropFolder}`);
 
 let clipboardHistory = [];
+let latestClipFromPhone = ''
 
 // Setup multer for file uploads
 const storage = multer.diskStorage({
@@ -25,6 +24,24 @@ const storage = multer.diskStorage({
     },
 });
 const upload = multer({ storage });
+
+// Serve file browser
+app.use(
+    "/",
+    express.static(dropFolder),
+    serveIndex(dropFolder, {
+        icons: true,
+        filter: (filename) => {
+            const hiddenItems = ["node_modules", "Icon", "package.json", "package-lock.json", "server.js"];
+            return !hiddenItems.includes(path.basename(filename));
+        },
+    })
+);
+
+
+// Static files serve
+app.use('/static', express.static(path.join(__dirname, 'QRCodes')));
+app.use('/static', express.static(path.join(__dirname, 'SystemRoutes')));
 
 // Clipboard view
 app.get('/clipboard', async (req, res) => {
@@ -107,217 +124,26 @@ app.get('/clipboard', async (req, res) => {
 app.post('/clipboard', express.urlencoded({ extended: true }), (req, res) => {
     const clip = req.body.clip;
     if (clip) {
-        console.log(`📥 Received clipboard from text field:\n${clip}`);
+        latestClipFromPhone = clip;
     }
     res.redirect('/clipboard');
 });
 
 
+
 // Mobile-friendly upload UI
 app.get('/upload', (req, res) => {
-    res.send(`
-        <html>
-        <head>
-            <title>📤 Upload to Mac</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                * {
-                    box-sizing: border-box;
-                }
-
-                body {
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    background: linear-gradient(to right, #f8f9fa, #e9ecef);
-                    margin: 0;
-                    padding: 20px;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100vh;
-                }
-
-                .container {
-                    background: white;
-                    padding: 30px 25px;
-                    border-radius: 12px;
-                    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-                    text-align: center;
-                    width: 100%;
-                    max-width: 400px;
-                }
-
-                h1 {
-                    font-size: 1.8rem;
-                    margin-bottom: 1rem;
-                    color: #333;
-                }
-
-                input[type="file"] {
-                    display: block;
-                    margin: 20px auto;
-                    width: 100%;
-                    font-size: 1rem;
-                    padding: 10px;
-                    border: 2px dashed #ccc;
-                    border-radius: 8px;
-                    background-color: #fafafa;
-                    cursor: pointer;
-                    transition: border-color 0.3s;
-                }
-
-                input[type="file"]:hover {
-                    border-color: #007bff;
-                }
-
-                button {
-                    margin-top: 15px;
-                    padding: 12px 20px;
-                    font-size: 1rem;
-                    background-color: #007bff;
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    transition: background-color 0.3s ease;
-                    width: 100%;
-                }
-
-                button:hover {
-                    background-color: #0056b3;
-                }
-
-                @media (max-width: 480px) {
-                    h1 {
-                        font-size: 1.5rem;
-                    }
-
-                    .container {
-                        padding: 20px;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>📤 Upload File to Mac</h1>
-                <form action="/upload" method="POST" enctype="multipart/form-data">
-                    <input type="file" name="file" multiple required />
-                    <button type="submit">Upload</button>
-                </form>
-            </div>
-        </body>
-        </html>
-    `);
+    res.sendFile(path.join(__dirname, 'SystemRoutes', 'upload.html'));
 });
 
 
 // Upload handler
 app.post('/upload', upload.array('file', 12), (req, res) => {
-    const files = req.files.map((file) => file.originalname);
-    res.send(`
-        <html>
-        <head>
-            <style>
-                body {
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    background: linear-gradient(to right, #f8f9fa, #e9ecef);
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    height: 100vh;
-                    margin: 0;
-                    color: #343a40;
-                    animation: fadeIn 0.6s ease-in-out;
-                }
-
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-
-                h2 {
-                    font-size: 2rem;
-                    margin-bottom: 1rem;
-                }
-
-                p {
-                    font-size: 1.1rem;
-                    max-width: 80%;
-                }
-
-                strong {
-                    color: #007bff;
-                }
-
-                a {
-                    margin-top: 2rem;
-                    display: inline-block;
-                    background-color: #007bff;
-                    color: white;
-                    padding: 0.6rem 1.2rem;
-                    border-radius: 8px;
-                    text-decoration: none;
-                    transition: background-color 0.3s ease;
-                }
-
-                a:hover {
-                    background-color: #0056b3;
-                }
-
-                .file-list {
-                    margin-top: 1rem;
-                    background: white;
-                    padding: 1rem 1.5rem;
-                    border-radius: 10px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                }
-
-                .file-list span {
-                    display: block;
-                    margin: 0.2rem 0;
-                    font-weight: 500;
-                }
-            </style>
-        </head>
-        <body>
-            <h2>✅ Files Uploaded Successfully!</h2>
-            <div class="file-list">
-                <p>Saved to Downloads:</p>
-                ${files.map(file => `<span>📁 ${file}</span>`).join('')}
-            </div>
-            <a href="/upload">🔙 Upload More</a>
-        </body>
-        </html>
-    `);
+    res.sendFile(path.join(__dirname, 'SystemRoutes', 'upload-success.html'));
 });
 
 
 
-
-// Serve file browser
-app.use(
-    '/',
-    express.static(dropFolder),
-    serveIndex(dropFolder, {
-        icons: true,
-        filter: (filename) => {
-            const hiddenItems = ['node_modules', 'Icon', 'package.json', 'package-lock.json', 'server.js'];
-            return !hiddenItems.includes(path.basename(filename));
-        },
-    })
-);
-
-app.use('/static', express.static(path.join(__dirname, 'QRCodes')));
-app.use('/static', express.static(path.join(__dirname, 'SystemRoutes')));
-
-
-
-
-
-app.get('/qr/all', (req, res) => {
-    res.sendFile(path.join(`${__dirname}/QRCodes`, 'dashboard.html'));
-});
 
 app.get('/qr/file-browse', (req, res) => {
     res.sendFile(path.join(`${__dirname}/QRCodes`, 'file-browse.html'));
@@ -328,8 +154,56 @@ app.get('/qr/upload', (req, res) => {
 });
 
 app.get('/qr/clipboard', (req, res) => {
-    res.sendFile(path.join(`${__dirname}/QRCodes`, 'clipboard.html'));
-})
+    const escapeHtml = (text) =>
+        text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8" />
+            <title>📡 Local File Sharing</title>
+            <style>
+                body {
+                    font-family: sans-serif;
+                    text-align: center;
+                    margin-top: 2em;
+                }
+                h1 { font-size: 2em; }
+                .qr { margin: 1em 0; }
+                .clip-box {
+                    background: #f0f0f0;
+                    padding: 1em;
+                    margin-top: 1em;
+                    border-radius: 10px;
+                    max-width: 600px;
+                    margin-left: auto;
+                    margin-right: auto;
+                    word-wrap: break-word;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                }
+            </style>
+        </head>
+        <body>
+            <h1>📡 Local File Sharing (Clipboard)</h1>
+            <h2>📱 Scan these QR codes on your phone (same Wi-Fi)</h2>
+            <div class="qr">
+                <h2>📋 Clipboard</h2>
+                <img src="/qrcode?url=clipboard" />
+            </div>
+
+            <h2>📥 Latest Clip Sent from Phone</h2>
+            <div class="clip-box">${escapeHtml(latestClipFromPhone || 'No clip received yet.')}</div>
+        </body>
+        </html>
+    `);
+});
+
 
 
 //for qr code generation
@@ -358,7 +232,7 @@ app.listen(PORT, async () => {
         const { default: open } = await import('open');
         const ip = execSync('ipconfig getifaddr en0').toString().trim();
         const url = `http://${ip}:${PORT}`;
-        const feature = process.argv[2] || 'all';
+        const feature = process.argv[2] || 'upload';
 
         const separator = '═'.repeat(60);
         const centerText = (text) => {
@@ -367,10 +241,8 @@ app.listen(PORT, async () => {
             return ' '.repeat(padding) + text;
         };
 
-        console.clear(); // modern clean feel
-        console.log(`\n${separator}`);
+
         console.log(centerText('🚀 Local File Sharing Server'));
-        console.log(separator);
 
         console.log(`\n🌐 IP Address: ${ip}`);
         console.log(`🔌 Port      : ${PORT}`);
@@ -378,16 +250,13 @@ app.listen(PORT, async () => {
 
 
         // Open dashboard in default browser
-        if (feature === 'all') {
-            await open(`${url}/qr/all`);
-        }
-        if(feature === 'browser') {
+        if (feature === 'browser') {
             await open(`${url}/qr/file-browse`);
         }
-        if(feature === 'upload') {
+        if (feature === 'upload') {
             await open(`${url}/qr/upload`);
         }
-        if(feature === 'clipboard') {
+        if (feature === 'clipboard') {
             await open(`${url}/qr/clipboard`);
         }
 
