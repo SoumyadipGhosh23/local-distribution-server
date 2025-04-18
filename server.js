@@ -13,7 +13,7 @@ const PORT = 8000;
 const dropFolder = path.join(os.homedir(), 'Downloads');
 
 let clipboardHistory = [];
-let latestClipFromPhone = ''
+let latestClipFromPhone = []
 
 // Setup multer for file uploads
 const storage = multer.diskStorage({
@@ -124,7 +124,7 @@ app.get('/clipboard', async (req, res) => {
 app.post('/clipboard', express.urlencoded({ extended: true }), (req, res) => {
     const clip = req.body.clip;
     if (clip) {
-        latestClipFromPhone = clip;
+        latestClipFromPhone.push(clip)
     }
     res.redirect('/clipboard');
 });
@@ -154,13 +154,7 @@ app.get('/qr/upload', (req, res) => {
 });
 
 app.get('/qr/clipboard', (req, res) => {
-    const escapeHtml = (text) =>
-        text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+
 
     res.send(`
         <!DOCTYPE html>
@@ -198,7 +192,8 @@ app.get('/qr/clipboard', (req, res) => {
             </div>
 
             <h2>📥 Latest Clip Sent from Phone</h2>
-            <div class="clip-box">${escapeHtml(latestClipFromPhone || 'No clip received yet.')}</div>
+            <h3>Refresh to get the latest clip</h3>
+            <div class="clip-box">${latestClipFromPhone.length > 0 ? latestClipFromPhone?.map((clip) => clip) : 'No clip received yet.'}</div>
         </body>
         </html>
     `);
@@ -238,7 +233,7 @@ app.listen(PORT, async () => {
         const { default: open } = await import('open');
         const ip = execSync('ipconfig getifaddr en0').toString().trim();
         const url = `http://${ip}:${PORT}`;
-        const feature = process.argv[2] || 'browser';
+        const feature = process.argv[2] || 'clipboard';
 
         const separator = '═'.repeat(60);
         const centerText = (text) => {
