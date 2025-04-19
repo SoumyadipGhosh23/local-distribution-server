@@ -4,18 +4,17 @@ const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
 const QRCode = require('qrcode');
-const { upload } = require('./middleware/multer');
+const {upload} = require('./middleware/multer.js');
 
 
 const app = express();
 const PORT = 8000;
-const dropFolder = path.join(os.homedir(), 'Downloads');
 
 let clipboardHistory = [];
 let latestClipFromPhone = []
 
 
-
+const dropFolder = path.join(os.homedir(), 'Downloads');
 // Serve file browser
 app.use(
     "/file-browse",
@@ -37,8 +36,11 @@ app.use('/static', express.static(path.join(__dirname, 'SystemRoutes')));
 app.set('view engine', 'ejs');
 
 
-//changing default dir to SystemRoutes
-app.set('views', path.join(__dirname, 'SystemRoutes'));
+app.set('views', [
+    path.join(__dirname, 'SystemRoutes'),
+    path.join(__dirname, 'QRCodes')
+]);
+
 
 
 

@@ -12,7 +12,7 @@
         body {
             margin: 0;
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(to right, #f0f4f8, #d9e2ec);
+            background: linear-gradient(to right, #4facfe, #00f2fe);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -27,54 +27,81 @@
 
         .container {
             background: white;
-            padding: 2rem 3rem;
-            border-radius: 20px;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+            padding: 3rem 4rem;
+            border-radius: 25px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
             text-align: center;
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
+            margin: 1rem;
+            background-color: #f5f7fa;
         }
 
         h2 {
             color: #38a169;
-            font-size: 2rem;
+            font-size: 2.2rem;
+            font-weight: 600;
             margin-bottom: 1rem;
+            text-transform: uppercase;
         }
 
         .file-list {
             background: #f8f9fa;
-            padding: 1rem;
-            margin: 1rem 0;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
             border-radius: 12px;
             text-align: left;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         .file-list span {
             display: block;
-            margin: 0.3rem 0;
+            margin: 0.5rem 0;
             font-weight: 500;
             color: #2d3748;
         }
 
         a.button {
-            margin-top: 1rem;
+            margin-top: 1.5rem;
             display: inline-block;
             background-color: #3182ce;
             color: white;
-            padding: 0.7rem 1.5rem;
-            border-radius: 10px;
+            padding: 0.8rem 1.8rem;
+            border-radius: 12px;
             text-decoration: none;
             font-weight: 600;
-            transition: background 0.3s ease;
+            transition: background 0.3s ease, transform 0.2s ease;
         }
 
         a.button:hover {
             background-color: #2b6cb0;
+            transform: scale(1.05);
         }
 
         .success-icon {
-            font-size: 3rem;
+            font-size: 4rem;
             color: #38a169;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 600px) {
+            .container {
+                padding: 2rem 2.5rem;
+                width: 90%;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+            }
+
+            .file-list {
+                padding: 1rem;
+            }
+
+            a.button {
+                padding: 0.7rem 1.5rem;
+            }
         }
     </style>
 </head>

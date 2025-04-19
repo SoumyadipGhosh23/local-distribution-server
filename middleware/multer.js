@@ -1,4 +1,8 @@
 const multer = require("multer");
+const path = require('path');
+const os = require('os');
+
+const dropFolder = path.join(os.homedir(), 'Downloads');
 
 // Setup multer for file uploads
 const storage = multer.diskStorage({
@@ -9,4 +13,8 @@ const storage = multer.diskStorage({
     },
 });
 
-export const upload = multer({ storage });
+const upload = multer({ storage });
+
+module.exports = {
+    upload,
+};

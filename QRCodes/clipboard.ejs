@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>📡 Local File Sharing : File Browse</title>
+    <title>📡 Local File Sharing</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
     <style>
       :root {
-        --bg-gradient: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+        --bg-gradient: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
         --card-bg: rgba(255, 255, 255, 0.15);
         --glass-border: rgba(255, 255, 255, 0.2);
       }
@@ -52,7 +52,16 @@
         text-align: center;
       }
 
-      .qr-card {
+      h3 {
+        font-size: 1rem;
+        font-weight: 400;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+        text-align: center;
+      }
+
+      .qr-card,
+      .clip-box {
         backdrop-filter: blur(16px);
         background: var(--card-bg);
         border: 1px solid var(--glass-border);
@@ -63,9 +72,11 @@
         max-width: 420px;
         text-align: center;
         margin: 1.2rem 0;
+        color: #fff;
       }
 
-      .qr-card h3 {
+      .qr-card h3,
+      .clip-box h3 {
         font-weight: 600;
         font-size: 1.4rem;
         margin-bottom: 1rem;
@@ -79,6 +90,13 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
 
+      .clip-text {
+        font-size: 1rem;
+        font-weight: 500;
+        line-height: 1.6;
+        word-wrap: break-word;
+      }
+
       footer {
         margin-top: 3rem;
         font-size: 0.9rem;
@@ -90,23 +108,36 @@
           font-size: 1.8rem;
         }
 
-        .qr-card {
+        .qr-card,
+        .clip-box {
           padding: 1.2rem;
         }
       }
     </style>
   </head>
   <body>
-    <h1>📡 Local File Sharing (Browse Files)</h1>
+    <h1>📡 Local File Sharing (Clipboard)</h1>
     <h2>📱 Scan this QR on your phone (same Wi-Fi)</h2>
 
     <div class="qr-card">
-      <h3>📂 File Browser</h3>
-      <img src="/qrcode?url=file-browse" alt="File Browser QR Code" />
+      <h3>📋 Clipboard</h3>
+      <img src="/qrcode?url=clipboard" alt="Clipboard QR Code" />
     </div>
 
-    <footer>
-      🗂️ Secure access to your local files, from any device on Wi-Fi
-    </footer>
+    <h2>📥 Latest Clip Sent from Phone</h2>
+    <h3>🔄 Refresh to get the latest clip</h3>
+
+    <div class="clip-box">
+      <% if (latestClipFromPhone.length > 0) { %>
+      <div class="clip-text">
+        <% latestClipFromPhone.forEach((clip, index) => { %> <%= clip %><%=
+        index !== latestClipFromPhone.length - 1 ? '<br />' : '' %> <% }) %>
+      </div>
+      <% } else { %>
+      <div class="clip-text">No clip received yet.</div>
+      <% } %>
+    </div>
+
+    <footer>✨ Powered securely by your own local network & Soumyadip</footer>
   </body>
 </html>
