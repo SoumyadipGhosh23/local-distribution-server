@@ -3,9 +3,8 @@ const serveIndex = require('serve-index');
 const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
-const multer = require('multer');
-const fs = require('fs');
 const QRCode = require('qrcode');
+const { upload } = require('./middleware/multer');
 
 
 const app = express();
@@ -15,15 +14,7 @@ const dropFolder = path.join(os.homedir(), 'Downloads');
 let clipboardHistory = [];
 let latestClipFromPhone = []
 
-// Setup multer for file uploads
-const storage = multer.diskStorage({
-    destination: dropFolder,
-    filename: (req, file, cb) => {
-        const safeName = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-        cb(null, `${Date.now()}_${safeName}`);
-    },
-});
-const upload = multer({ storage });
+
 
 // Serve file browser
 app.use(
@@ -38,12 +29,21 @@ app.use(
     })
 );
 
-
 // Static files serve
 app.use('/static', express.static(path.join(__dirname, 'QRCodes')));
 app.use('/static', express.static(path.join(__dirname, 'SystemRoutes')));
 
-// Clipboard view
+// Set EJS as your view engine
+app.set('view engine', 'ejs');
+
+
+//changing default dir to SystemRoutes
+app.set('views', path.join(__dirname, 'SystemRoutes'));
+
+
+
+// Main Views
+
 app.get('/clipboard', async (req, res) => {
     const clipboardy = await import('clipboardy');
     const currentClipboard = clipboardy.default.readSync();
@@ -120,29 +120,17 @@ app.get('/clipboard', async (req, res) => {
     `);
 });
 
-// Handles user input from the manual clipboard textbox
-app.post('/clipboard', express.urlencoded({ extended: true }), (req, res) => {
-    const clip = req.body.clip;
-    console.log(clip);
-    if (clip) {
-        latestClipFromPhone.push(clip)
-    }
-    console.log(latestClipFromPhone);
-    res.redirect('/clipboard');
-});
 
-
-
-// Mobile-friendly upload UI
 app.get('/upload', (req, res) => {
     res.sendFile(path.join(__dirname, 'SystemRoutes', 'upload.html'));
 });
 
 
-// Upload handler
 app.post('/upload', upload.array('file', 12), (req, res) => {
-    res.sendFile(path.join(__dirname, 'SystemRoutes', 'upload-success.html'));
+    const fileNames = req.files.map(file => file.originalname); // Use original name for display
+    res.render('upload-success', { fileNames });
 });
+
 
 
 
@@ -157,55 +145,23 @@ app.get('/qr/upload', (req, res) => {
 });
 
 app.get('/qr/clipboard', (req, res) => {
-
-    res.send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8" />
-            <title>📡 Local File Sharing</title>
-            <style>
-                body {
-                    font-family: sans-serif;
-                    text-align: center;
-                    margin-top: 2em;
-                }
-                h1 { font-size: 2em; }
-                .qr { margin: 1em 0; }
-                .clip-box {
-                    background: #f0f0f0;
-                    padding: 1em;
-                    margin-top: 1em;
-                    border-radius: 10px;
-                    max-width: 600px;
-                    margin-left: auto;
-                    margin-right: auto;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-                }
-            </style>
-        </head>
-        <body>
-            <h1>📡 Local File Sharing (Clipboard)</h1>
-            <h2>📱 Scan these QR codes on your phone (same Wi-Fi)</h2>
-            <div class="qr">
-                <h2>📋 Clipboard</h2>
-                <img src="/qrcode?url=clipboard" />
-            </div>
-
-            <h2>📥 Latest Clip Sent from Phone</h2>
-            <h3>Refresh to get the latest clip</h3>
-            <div class="clip-box">${latestClipFromPhone.length > 0
-            ? latestClipFromPhone.map((clip, index) => `${clip}${index === latestClipFromPhone.length - 1 ? '' : '<br/>'}`).join('')
-            : 'No clip received yet.'}
-            </div>
-        </body>
-        </html>
-    `);
+    res.render('clipboard', { latestClipFromPhone });
 });
 
 
 
-//for qr code generation
+// Handler Files
+
+// Handles user input from the manual clipboard textbox
+app.post('/clipboard', express.urlencoded({ extended: true }), (req, res) => {
+    const clip = req.body.clip;
+    if (clip) {
+        latestClipFromPhone.push(clip)
+    }
+    res.redirect('/clipboard');
+});
+
+//handles the QR code generation
 app.get('/qrcode', async (req, res) => {
     const { url } = req.query;
     const domain = req.rawHeaders[1];
